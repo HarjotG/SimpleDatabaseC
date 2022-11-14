@@ -13,7 +13,7 @@
 #define __HASHTABLE_H
 
 // 2^5 (or 1 << 5) = 32
-#define HASHTABLE_DEFALTCAP 5
+#define HASHTABLE_DEFAULTCAP 5
 
 typedef enum EntryType {
     STRING,

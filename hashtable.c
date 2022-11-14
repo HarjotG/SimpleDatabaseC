@@ -59,9 +59,9 @@ Hashtable *htCreateTable() {
     memset(ht, 0, sizeof(Hashtable));
     if (ht) {
         ht->len = 0;
-        ht->exp = HASHTABLE_DEFALTCAP;
-        ht->table = malloc((1 << HASHTABLE_DEFALTCAP) * sizeof(HashtableEntry));
-        memset(ht->table, 0, (1 << HASHTABLE_DEFALTCAP) * sizeof(HashtableEntry));
+        ht->exp = HASHTABLE_DEFAULTCAP;
+        ht->table = malloc((1 << HASHTABLE_DEFAULTCAP) * sizeof(HashtableEntry));
+        memset(ht->table, 0, (1 << HASHTABLE_DEFAULTCAP) * sizeof(HashtableEntry));
     }
 
     return ht;
