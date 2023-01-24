@@ -8,8 +8,8 @@
 
 void test1() {
     Hashtable *ht = htCreateTable();
-    assert(ht->exp == HASHTABLE_DEFALTCAP);
-    for (int i = 0; i < (1 << HASHTABLE_DEFALTCAP); i++) {
+    assert(ht->exp == HASHTABLE_DEFAULTCAP);
+    for (int i = 0; i < (1 << HASHTABLE_DEFAULTCAP); i++) {
         HashtableValue htv;
         htv.entryType = SIGNED_INT;
         htv.v.s64 = i * 10;
@@ -17,7 +17,7 @@ void test1() {
         assert(ht->len == i + 1);
     }
     // check if the values can be found and if they match inserted vals
-    for (int i = 0; i < (1 << HASHTABLE_DEFALTCAP); i++) {
+    for (int i = 0; i < (1 << HASHTABLE_DEFAULTCAP); i++) {
         HashtableValue htv = htFind(ht, &i, sizeof(i));
         assert(htv.entryType == SIGNED_INT);
         assert(htv.v.s64 == i * 10);
@@ -27,7 +27,7 @@ void test1() {
 
 void test2() {
     Hashtable *ht = htCreateTable();
-    assert(ht->exp == HASHTABLE_DEFALTCAP);
+    assert(ht->exp == HASHTABLE_DEFAULTCAP);
     for (int i = 0; i < 999; i++) {
         HashtableValue htv;
         htv.entryType = SIGNED_INT;
