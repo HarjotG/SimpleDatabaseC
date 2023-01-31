@@ -5,12 +5,6 @@
 #include <string.h>
 #include <sys/types.h>
 
-typedef enum MetaCommands {
-    META_EXIT,
-    META_SUCCESS,
-    META_NONE,
-} MetaCommands;
-
 typedef struct {
     char *buffer;
     ssize_t buffer_len;
@@ -25,7 +19,6 @@ typedef struct {
 } Command;
 
 typedef struct {
-    int fd;        /* The file descriptor */
     Hashtable *ht; /* The hashtable implementation of the database*/
 } Database;
 
@@ -197,8 +190,6 @@ int executeDbCommand(InputStatement *st, Database *db) {
     } else if (strncmp(command.query, "replace", 6) == 0) {
         int retval = executeReplaceCommand(db->ht, &command);
         return retval;
-    } else if (strncmp(command.query, "create table", 12) == 0) {
-        // TODO: Implement?
     }
     return 1;
 }
@@ -209,20 +200,21 @@ int doMetaCommand(InputStatement *st, Database *db) {
     if (strcmp(".q", metaCommand) == 0) {
         free(st->buffer);
         closeDb(db);
-        return META_EXIT;
+        printf("Exiting...\n");
+        exit(0);
     } else if (strcmp(".save", metaCommand) == 0) {
         char *fileName = strtok(NULL, " ");
         FILE *file = fopen(fileName, "w");
         if (htSerializeToFile(db->ht, file) == 0) {
             fclose(file);
-            return META_SUCCESS;
+            return 0;
         }
     } else if (strcmp(".load", metaCommand) == 0) {
         char *fileName = strtok(NULL, " ");
         FILE *file = fopen(fileName, "r");
         if (htDeserializeFromFile(db->ht, file) == 0) {
             fclose(file);
-            return META_SUCCESS;
+            return 0;
         }
     }
 }
@@ -237,7 +229,7 @@ int readInput(InputStatement *st) {
         st->buffer[input_len - 1] = '\0';
     }
     st->input_len = input_len - 1;
-    return META_NONE;
+    return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -255,10 +247,7 @@ int main(int argc, char *argv[]) {
             closeDb(&db);
             break;
         } else if (st.buffer[0] == '.') {
-            if (doMetaCommand(&st, &db) == META_EXIT) {
-                printf("Exiting...\n");
-                break;
-            }
+            doMetaCommand(&st, &db);
         } else {
             if (executeDbCommand(&st, &db) != 0) {
                 printf("Error completing command\n");
