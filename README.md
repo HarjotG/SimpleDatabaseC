@@ -14,7 +14,7 @@ Lets start out by creating the hashtable first as its going to be our foundation
 
 Lets start by declaring the types that we're going to store in the hashtable. We'll store strings, unsigned ints, signed ints, and doubles. Also, we'll include a NONE type for housekeeping later on.
 
-```C
+```c
 typedef enum EntryType {
     STRING,
     UNSIGNED_INT,
@@ -28,7 +28,7 @@ Next, lets start on laying out the groundwork for the hashtable.
 
 Lets declare a struct that represents a single value stored in the hash table. We store the values we  just discussed inside a union and store the type of the value alongside it. This way we will know whether there is an integer, string or whatever stored.
 
-```C
+```c
 typedef struct HashtableValue {
     EntryType entryType;
     union {
@@ -45,7 +45,7 @@ For each entry, we will need to know its key (represented by the `void *key` and
 
 For this project, we will use Chaining as our hashtable conflict resolution strategy. So, if two keys hash to the same value we will construct a linked list. Thats why we have a pointer to a `struct HashtableEntry` in the same struct.
 
-```C
+```c
 typedef struct HashtableEntry {
     void *key;
     size_t keylen;
@@ -59,7 +59,7 @@ At the start, we won't know how many key-value pairs the user will want to store
 
 You might notice we don't store the size as an integer number. This is because we want our resizeable array to be a power of 2 (this makes it easy to resize by doubling/halfing the size). Since we know that our hashtable array size will be a power of 2 (ex 2^5, 2^6 etc) we can get away with only storing the exponent in `unsigned char exp` (then we can get the size of the array by doing `1 << exp`).
 
-```C
+```c
 typedef struct Hashtable {
     HashtableEntry **table; /* Array of pointers to hashtable entries */
     uint64_t len;           /* Length of the table array (number of key/value pairs)*/
@@ -71,7 +71,7 @@ Now, with the data structure of the hashtable out of the way, we can focus on th
 
 Lets start off by creating the hash function. Or in this case, using an existing hash function. We use the `siphash` hash function from the [github repo here](https://github.com/veorq/SipHash). This function is pretty simple, just take in the key with its length and return the `uint` hash. Not much else to say.
 
-```C
+```c
 uint64_t htHashFunction(const void *key, size_t keylen) {
     // Using siphash for the hashing function
     uint64_t hash;
@@ -85,7 +85,7 @@ uint64_t htHashFunction(const void *key, size_t keylen) {
 Lets move on to implementing the function to find an entry from the hashtable. In the `htFindEntry` helper function, we perform a lookup in the hashtable by hashing the key using the previous function (making sure we modulo with the size of the array so we don't go out of bounds). Then we simply index into the hashtable. We might find the entry on that first try, but there is always the case where two entries might have hashed to the same index (a conflict). We chose our conflict resolution strategy to create a linked-list when this happens, therefore we need to look through the linked list until we find our entry we are looking for. For this, we use the `cmpKey` helper function to compare the two keys.
 
 In the function `htFind`, if we find the entry we are looking for, we will obviously return that value. If we don't find the value, we return a NONE type to indicate so.
-```C
+```c
 // compare two keys, return 1 if same 0 if not sames
 static int cmpKey(const void *key1, size_t keylen1, const void *key2, size_t keylen2) {
     if (keylen1 != keylen2) {
@@ -133,7 +133,7 @@ In 'htExpandandReshash', we allocate a larger new table, rehash everything in th
 
 After we make a larger hashtable (if we needed to), we add the new entry. We hash the key just like in 'htFind', allocate memory and initialize the entry, and then add the entry at the top of the linked list.
 
-```C
+```c
 static void htExpandAndRehash(Hashtable *ht) {
     HashtableEntry **newTable = malloc((1 << ht->exp + 1) * sizeof(HashtableEntry));
     memset(newTable, 0, (1 << ht->exp + 1) * sizeof(HashtableEntry));
@@ -182,7 +182,7 @@ int htAdd(Hashtable *ht, const void *key, size_t keylen, HashtableValue htv) {
 
 Now that we can add items in the hashtable, we should also be able to remove items. We start out the same as before and we ahsh the key and go to the index into the hashtable. After that, it is the same process as removing a node from a linked list. 
 
-```C
+```c
 int htRemove(Hashtable *ht, const void *key, size_t keylen) {
     uint64_t idx = htHashFunction(key, keylen) % (1 << ht->exp);
     HashtableEntry *hte = ht->table[idx];
@@ -216,7 +216,7 @@ int htRemove(Hashtable *ht, const void *key, size_t keylen) {
 
 The final operation is the update/replace function. This is a pretty simple function that finds the entry in the table and updates the value stored there. Not much to say here
 
-```C
+```c
 int htReplace(Hashtable *ht, const void *key, size_t keylen, HashtableValue htv) {
     HashtableEntry *hte = htFindEntry(ht, key, keylen);
     if (hte != NULL) {
@@ -233,7 +233,7 @@ For completeness, here are the functions to create and delete the hashtables. We
 
 `HASHTABLE_DEFAULTCAP` is defined as 5.
 
-```C
+```c
 Hashtable *htCreateTable() {
     Hashtable *ht = malloc(sizeof(Hashtable));
     memset(ht, 0, sizeof(Hashtable));
@@ -272,7 +272,7 @@ Now that we've implemented the hashtable for the foundation, we can now implemen
 
 First, lets create the main.c file for hte entrypoint into our program. Then, we can add the structs that we will use to organize and group the data we handle.
 
-```C
+```c
 typedef struct {
     char *buffer;
     ssize_t buffer_len;
@@ -295,7 +295,7 @@ You can see that we have structs for `InputStatement`, `Command`, and `Database`
 
 Now, lets implement the function to execute an insert command in the database based on the user's input
 
-```C
+```c
 int getKeyType(char *type) {
     if (strcmp(type, "string") == 0) {
         return STRING;
@@ -365,7 +365,7 @@ This function simply constructs the necessary data types required for the functi
 
 The functions to execute the select and delete commands are very simple. Not much explanation needed here. For select, we simply execute the query in the database and print out the result. For delete, we simply delete the entry in the database.
 
-```C
+```c
 int executeSelectCommand(Hashtable *ht, Command *command) {
     HashtableValue htv = htFind(ht, command->key, strlen(command->key));
     if (htv.entryType == NONE) {
@@ -399,7 +399,7 @@ int executeDeleteCommand(Hashtable *ht, Command *command) {
 
 Finally, to finish off the user-input -> database queries, we have the replace function here.
 
-```C
+```c
 int executeReplaceCommand(Hashtable *ht, Command *command) {
     HashtableValue htv;
     char *err = NULL;
@@ -440,7 +440,7 @@ Like the ones before, this one is also pretty simple where we construct the data
 
 To put all these function together, here is the function to parse the `InputStatement` and create the `Command` argument to each of the previous functions.
 
-```C
+```c
 int executeDbCommand(InputStatement *st, Database *db) {
     Command command;
     command.query = strtok(st->buffer, " ");
@@ -489,7 +489,7 @@ Where `insert` specifies an insert query, `key1` is the key, `int` is the data t
 
 After all this, we can move on to the last and final step in this project. We can implement the `main` function and put this all together.
 
-```C
+```c
 int readInput(InputStatement *st) {
     ssize_t input_len = getline(&st->buffer, &st->buffer_len, stdin);
     if (input_len < 0) {
