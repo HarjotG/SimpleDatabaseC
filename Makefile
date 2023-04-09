@@ -1,14 +1,38 @@
-CC=gcc
-CFLAGS=-I.
-DEPS = hashtable.h siphash.h
-OBJ = main.o hashtable.o siphash.o
-OBJTEST = test.o hashtable.o siphash.o
+BUILD_DIR := ./build
+OBJ_DIR := ${BUILD_DIR}/obj
+SRC_DIR := ./src
+TEST_DIR := ./tests
+CC := gcc
+DATABASE_EXEC := $(BUILD_DIR)/db
+TEST_EXEC := $(BUILD_DIR)/test
 
-%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+SRCS := src/main.c src/hashtable.c src/siphash.c src/network.c
+SRCS_TEST := tests/test.c src/hashtable.c src/siphash.c src/network.c
 
-db: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS)
+OBJS := $(SRCS:%.c=$(OBJ_DIR)/%.o)
+OBJS_TEST := $(SRCS_TEST:%.c=$(OBJ_DIR)/%.o)
 
-test: $(OBJTEST)
-	$(CC) -o $@ $^ $(CFLAGS)
+DEPS := $(OBJS:.o=.d)
+DEPS_TEST := $(OBJS_TEST:.o=.d)
+
+CFLAGS := -g -MMD -MP
+
+.PHONY: all
+all: ${DATABASE_EXEC} ${TEST_EXEC}
+
+$(DATABASE_EXEC): $(OBJS)
+	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+
+$(TEST_EXEC): $(OBJS_TEST)
+	$(CC) $(OBJS_TEST) -o $@ $(LDFLAGS)
+
+$(OBJ_DIR)/%.o: %.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
+.PHONY: clean
+clean:
+	-rm -r -f $(BUILD_DIR)/*
+
+-include $(DEPS)

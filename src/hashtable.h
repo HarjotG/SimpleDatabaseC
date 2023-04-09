@@ -4,6 +4,8 @@
  *
  */
 
+#pragma once
+
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -21,30 +23,30 @@ typedef enum EntryType {
     SIGNED_INT,
     DOUBLE,
     NONE,
-} EntryType;
+} EntryType_t;
 
-typedef struct HashtableValue {
-    EntryType entryType;
+typedef struct HashtableValue_t {
+    EntryType_t entryType;
     union {
-        void *val;
+        char *val;
         uint64_t u64;
         int64_t s64;
         double d;
     } v;
-} HashtableValue;
+} HashtableValue_t;
 
 typedef struct HashtableEntry {
-    void *key;
+    char *key;
     size_t keylen;
-    HashtableValue htv;
-    struct HashtableEntry *next;
-} HashtableEntry;
+    HashtableValue_t htv;
+    struct HashtableEntry *next; // Using separate chaining to handle hash-conflicts
+} HashtableEntry_t;
 
 typedef struct Hashtable {
-    HashtableEntry **table; /* Array of pointers to hashtable entries */
-    uint64_t len;           /* Length of the table array (number of key/value pairs)*/
-    unsigned char exp;      /* Size of the table array is 1<<exp (size is number of open slots) */
-} Hashtable;
+    HashtableEntry_t **table; /* Array of pointers to hashtable entries */
+    uint64_t len;             /* number of key/value pairs*/
+    unsigned char exp;        /* Size of the table array is 1<<exp (size is number of open slots) */
+} Hashtable_t;
 
 /**
  * Hash function for the hashtable
@@ -54,14 +56,14 @@ typedef struct Hashtable {
  *
  * @returns The hash value of the key
  * */
-uint64_t htHashFunction(const void *key, size_t keylen);
+uint64_t htHashFunction(const char *key, size_t keylen);
 
 /**
  * Create an empty Hashtable
  *
  * @returns The empty Hashtable structure or null on error
  * */
-Hashtable *htCreateTable();
+Hashtable_t *htCreateTable();
 
 /**
  * Free the hashtable structure
@@ -70,7 +72,7 @@ Hashtable *htCreateTable();
  *
  * @returns 0 if success, positive value otherwise
  * */
-int htDeleteTable(Hashtable *ht);
+void htDeleteTable(Hashtable_t *ht);
 
 /**
  * Get an entry from the hashtable
@@ -79,9 +81,9 @@ int htDeleteTable(Hashtable *ht);
  * @param key The key
  * @param keylen The size of the key
  *
- * @returns The value if found, otherwise returns a NONE value
+ * @returns The value if found, otherwise returns a HashtableValue set to the NONE value
  * */
-HashtableValue htFind(Hashtable *ht, const void *key, size_t keylen);
+HashtableValue_t htFind(Hashtable_t *ht, const char *key, size_t keylen);
 
 /**
  * Add an entry to the hashtable
@@ -93,7 +95,7 @@ HashtableValue htFind(Hashtable *ht, const void *key, size_t keylen);
  *
  * @returns 0 if insert successful, 1 if key already exists in table
  * */
-int htAdd(Hashtable *ht, const void *key, size_t keylen, HashtableValue htv);
+int htAdd(Hashtable_t *ht, const char *key, size_t keylen, HashtableValue_t htv);
 
 /**
  * Remove an entry in the hashtable
@@ -101,33 +103,21 @@ int htAdd(Hashtable *ht, const void *key, size_t keylen, HashtableValue htv);
  * @param ht The hashtable to remove the entry from
  * @param key The key of the entry
  * @param keylen The length of the key
+ *
+ * @returns 0 if successful, 1 if there is no entry to remove
  * */
-int htRemove(Hashtable *ht, const void *key, size_t keylen);
+int htRemove(Hashtable_t *ht, const char *key, size_t keylen);
 
 /**
- * Replace an entry in the hashtable
+ * Replace an entry in the hashtable. If entry does not already exist, add the entry
  *
  * @param ht The hashtable to replace the entry from
  * @param key The key of the entry to replace
  * @param keylen The length of the key
  * @param htv The new value for the key
- */
-int htReplace(Hashtable *ht, const void *key, size_t keylen, HashtableValue htv);
-
-/**
- * Serialize the hashtable to the specified file
  *
- * @param ht The hashtable to seriailize
- * @param file The file to serialize to
+ * @returns 0
  */
-int htSerializeToFile(Hashtable *ht, FILE *file);
-
-/**
- * Deserialize the hashtable from the specified file
- *
- * @param ht The hashtable to seriailize to
- * @param file The file to deserialize from
- */
-int htDeserializeFromFile(Hashtable *ht, FILE *file);
+int htReplace(Hashtable_t *ht, const char *key, size_t keylen, HashtableValue_t htv);
 
 #endif /* __HASHTABLE_H */

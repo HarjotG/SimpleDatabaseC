@@ -12,6 +12,8 @@
    <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
+#pragma once
+
 #include <inttypes.h>
 #include <string.h>
 
